@@ -1,96 +1,26 @@
-# laravel_docker
-## Docker + php-fpm + Nginx + MySQL 環境構築
-構築の流れ
-- 以下Dockerイメージ作成
-  - Nginx
-  - php-fpm
-  - MySQL
-- laravelインストール
-- envファイル設定配置および設定
-- DBマイグレーション
+# laravel_test_sample
+## Laravelでテストコードを記載するための入門用ブランチ
 
-## 構築手順
-・GithubからソースをcloneもしくはzipでDLする
+### 試験用クラスの作成
+```
+php artisan make:test XXX[クラス名]
+```
+何らかのテストコードを実装
 
-※laravelフォルダに存在する「.gitkeep」を削除する
+### 試験コード
 
-・コマンドラインツール（PowerShell,CMD, Terminal）にて
-「docker-compose.yml 」が存在するフォルダへ移動し、以下コマンド実行
 ```
-# dockerイメージ作成（キャッシュ無し）
-docker-compose build --no-cache
-
-# dockerコンテナ起動
-docker-compose up -d
-
-# php-fpmコンテナにログイン
-docker-compose exec php-fpm /bin/bash
-```
-・php-fpmコンテナ内にて"/var/www/html"にいる状態で下記Laravelインストールコマンド実行
-```
-composer create-project --prefer-dist laravel/laravel=7.*.* .
-```
-laravelフォルダ直下の「.env」に以下の情報を記述
-```
-APP_NAME=Laravel
-APP_ENV=local
-APP_KEY=
-APP_DEBUG=true
-APP_URL=http://localhost
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_PORT=3306
-DB_DATABASE=★ここは任意 ＆ docker-compose.ymlの値と合わせる★
-DB_USERNAME=★ここは任意 ＆ docker-compose.ymlの値と合わせる★
-DB_PASSWORD=★ここは任意 ＆ docker-compose.ymlの値と合わせる★
-BROADCAST_DRIVER=log
-CACHE_DRIVER=file
-QUEUE_CONNECTION=sync
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
-REDIS_HOST=127.0.0.1
-REDIS_PASSWORD=null
-REDIS_PORT=6379
-MAIL_DRIVER=smtp
-MAIL_HOST=smtp.mailtrap.io
-MAIL_PORT=2525
-MAIL_USERNAME=null
-MAIL_PASSWORD=null
-MAIL_ENCRYPTION=null
-MAIL_FROM_ADDRESS=null
-MAIL_FROM_NAME="${APP_NAME}"
-LOG_CHANNEL=daily
-```
-### /laravel/config/app.phpの設定
-```
-'timezone' => 'Asia/Tokyo',
-'locale' => 'ja',
-'fallback_locale' => 'ja',
-'faker_locale' => 'ja_JP',
-```
-■ キャッシュ作成とAPP_KEY作成
-```
-php artisan config:cache && php artisan key:generate && php artisan config:cache
+// URL「XXX」へのアクセス
+get('/XXX')
 ```
 
-■ マイグレーション
 ```
-php artisan migrate
+// 文字列「YYY」の存在確認
+get('/XXX')->assertSee('YYY');
 ```
-■ laravel/ui インストール
+など。。
 
-※ログイン機能を実装する場合、一旦bootstrapを入れる
-```
-composer require laravel/ui:~2.0
-php artisan ui bootstrap --auth
-```
-※JS(React, Vueなど)は後からでもOK
-
-■LaravelMIXインストール（後からでもOK）
-```
-apt update -y && apt install nodejs npm && npm install && npm run dev
-```
-■ブラウザ確認
-ブラウザアドレスバーにlocalhostを入力し、ページ表示を確認
+### 参考文献
+https://qiita.com/niisan-tokyo/items/264d4e8584ed58536bf4#%E3%83%88%E3%83%83%E3%83%97%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%AE%E3%83%86%E3%82%B9%E3%83%88%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B
 
 以上
