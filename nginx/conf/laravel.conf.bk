@@ -1,0 +1,71 @@
+log_format vhost '$host $remote_addr - $remote_user [$time_local] '
+                '"$request" $status $body_bytes_sent '
+                '"$http_referer" "$http_user_agent"';
+proxy_set_header    Host                $http_host;
+proxy_set_header    X-Real-IP           $remote_addr;
+proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+
+server {
+
+    server_name     localhost;
+    listen          80;
+    # アクセスログとエラーログを日付別に出したい：日付別で出したらlogrotateで何日以降のログファイルを削除するように設定
+    if ($time_iso8601 ~ "^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})") {
+      set $year $1;
+      set $month $2;
+      set $day $3;
+      # set $hour $4;
+      # set $min  $5;
+    }
+
+    # アクセスログとエラーログ
+    access_log  /var/log/nginx/nginx-access-$year-$month-$day.log;
+
+    # ログレベルをテスト用に変更
+    error_log       /var/log/nginx/nginx-error.log;
+
+    # ルートディレクトリは、{Laravelのルート}/publicです。
+    root            /var/www/html/public;
+    index           index.php index.html;
+
+    # 「Content-Length」リクエストヘッダーフィールドで指定された、クライアントリクエストボディの最大許容サイズを設定します。
+    # 要求のサイズが構成された値を超えると、413（Request Entity Too Large）エラーがクライアントに返されます。
+    client_max_body_size 256M;
+    # HTTP の持続的な接続で次のリクエストが来るまでサーバが待つ時間（秒）
+    # keepalive_timeout       3000;
+    proxy_ignore_client_abort on;
+
+    # URL内の'index.php'を取り除きます。
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHPファイルへのリクエスト時、php-fpmコンテナに送信します。
+    location ~ .php$ {
+        fastcgi_keep_conn on;
+        fastcgi_read_timeout 1900;
+        fastcgi_send_timeout 1900;
+        # 次のリクエストが来るまで同じクライアントからのKEEPALIVE(コネクション)をどのくらい保持するかとい設定
+        keepalive_timeout  1900;
+        proxy_read_timeout 1900;
+        # 不要かと思うので消す
+        # proxy_ignore_client_abort on;
+
+        # METAMASHI & OSAKAWADA
+        # fastcgi_pass php-fpm:9000;
+        # GKEversion
+
+        # OSAKWADA & METAMASHI
+        fastcgi_pass  127.0.0.1:9000;
+        # 2020/08/27 08:16:44 [emerg] 1#1: invalid number of arguments in "fastcgi_pass" directive in /etc/nginx/conf.d/default.conf:59
+        # nginx: [emerg] invalid number of arguments in "fastcgi_pass" directive in /etc/nginx/conf.d/default.conf:59
+        # GKE version
+        # Kubernetes の場合、名前解決できるアドレスやIPアドレス、UNIXソケットをしてすることができます。serviceの名前を指定
+        # fastcgi_pass  laravel-service:9000;
+
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root/$fastcgi_script_name;
+        include fastcgi_params;
+
+    }
+}
